@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://doi.org/10.5281/zenodo.23439577"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23439577-22d3ee?style=for-the-badge" alt="DOI"></a>
-  <img src="https://img.shields.io/badge/Lean_4-99_theorems-7c5cff?style=for-the-badge" alt="Lean 4">
+  <img src="https://img.shields.io/badge/Lean_4-108_theorems-7c5cff?style=for-the-badge" alt="Lean 4">
   <img src="https://img.shields.io/badge/Julia-904_checks-34d399?style=for-the-badge" alt="Julia">
   <img src="https://img.shields.io/badge/license-MIT-f59e0b?style=for-the-badge" alt="MIT">
 </p>
@@ -15,6 +15,7 @@
 | The Hodge conjecture on a dense union of curves in every family of K3 surfaces of transcendental rank at least 8 with real quadratic multiplication | The very general member of these families |
 | Weil classes are algebraic on every abelian sixfold of Weil type with complex multiplication | Weil classes on the very general non-split sixfold |
 | Weil classes on a dense union of special subvarieties of every family of non-split Weil sixfolds | A decomposition of the Weil class meeting the necessary condition of the paper |
+| With the 2026 CM theorem as a cited input: (F2) is equivalent to the algebraic locus being closed in every Shimura family; the Mumford link holds at every special point; the Hodge conjecture holds for every Fermat variety | The closedness itself (the variational Hodge conjecture for abelian schemes) |
 
 | Folder | Contents | Run |
 | :--- | :--- | :--- |

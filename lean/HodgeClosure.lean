@@ -56,6 +56,13 @@ by their labels in the LaTeX source.  What is checked is
              of chi on the integral lattice 16Z alpha + 4Z beta, the case
              bounds of Theorem w:thm-lagrangian, the 46 edges inside a Koszul
              cube and the acyclic order of the collapsed configuration.
+  Section 11 the CM theorem in the closure graph (Theorem f2closed: with the
+             cited CM theorem, closedness of the algebraic loci is
+             equivalent to AB; minimal sets {AB, F3'}, {Pr, F3'},
+             {CM, Cl, F3'}), the character count (n-1)(n-2) and the half of
+             type (1,0) for the Fermat curves of degree 3 to 24
+             (Corollary fermatall), and the types at a special point of
+             the Shimura curve (Theorem linkallcm).
 
 No Mathlib.  Every theorem is checked by `decide` (by `decide +kernel` in
 Sections 6 and 9 and for witt_count and chi_lattice_min) or by the core lemmas on natural numbers
@@ -1273,6 +1280,106 @@ theorem collapsed_acyclic :
     [("C", "A"), ("C", "D"), ("A", "B"), ("D", "B"), ("D", "F3"), ("F4", "A"), ("F4", "F3")].all
       (fun (x, y) => collapsedPos x < collapsedPos y) = true := by decide
 
+/-! ## Section 11: the CM theorem in the closure graph, and Fermat curves
+
+Section cmthm of the paper.  CM: the Hodge conjecture for abelian varieties of
+CM type (the cited CM theorem); Cl: in every Shimura family of Proposition
+cmfamily the algebraic locus of every flat Hodge class is closed; Pr: the
+propagation statement (iv) of Theorem propagation.  The rules are
+AB -> CM, AB -> Cl, AB -> Pr (special cases), CM and Cl -> AB
+(Theorem f2closed), Pr -> AB (Theorem propagation), AB and F3' -> HC, and
+HC -> AB, HC -> F3'. -/
+
+namespace CMGraph
+
+inductive S2 | HC | F3p | AB | CM | Cl | Pr
+  deriving DecidableEq, Repr
+
+open S2
+
+structure Rule2 where
+  prem : List S2
+  concl : S2
+
+def rules2 : List Rule2 :=
+  [ ⟨[AB], CM⟩, ⟨[AB], Cl⟩, ⟨[AB], Pr⟩, ⟨[CM, Cl], AB⟩, ⟨[Pr], AB⟩,
+    ⟨[AB, F3p], HC⟩, ⟨[HC], AB⟩, ⟨[HC], F3p⟩ ]
+
+def step2 (s : List S2) : List S2 :=
+  rules2.foldl (fun acc r =>
+    if r.prem.all (fun p => acc.contains p) && !acc.contains r.concl
+    then r.concl :: acc else acc) s
+
+def closure2 : Nat → List S2 → List S2
+  | 0, s => s
+  | k+1, s => closure2 k (step2 s)
+
+def derives2 (s : List S2) : Bool := (closure2 6 s).contains HC
+def gives2 (s : List S2) (x : S2) : Bool := (closure2 6 s).contains x
+
+/-- Theorem f2closed: with the CM theorem, closedness of the loci gives AB. -/
+theorem ab_from_cm_cl : gives2 [CM, Cl] AB = true := by rfl
+/-- Neither half alone gives AB. -/
+theorem not_ab_from_cm : gives2 [CM] AB = false := by rfl
+theorem not_ab_from_cl : gives2 [Cl] AB = false := by rfl
+/-- HC from the CM theorem, closedness and F3'. -/
+theorem hc_from_cm_cl_f3p : derives2 [CM, Cl, F3p] = true := by rfl
+/-- The CM theorem and F3' alone do not give HC. -/
+theorem not_hc_from_cm_f3p : derives2 [CM, F3p] = false := by rfl
+theorem not_hc_from_cm_cl : derives2 [CM, Cl] = false := by rfl
+
+def subsets2 : List S2 → List (List S2)
+  | [] => [[]]
+  | x :: xs => let r := subsets2 xs; r ++ r.map (fun s => x :: s)
+
+def hyps2 : List S2 := [F3p, AB, CM, Cl, Pr]
+
+def isSub2 (a b : List S2) : Bool := a.all (fun x => b.contains x)
+
+def minimal2 (s : List S2) : Bool :=
+  derives2 s && (subsets2 s).all (fun t => isSub2 s t || !derives2 t)
+
+def minimalSets2 : List (List S2) := (subsets2 hyps2).filter minimal2
+
+/-- The minimal sets are {AB, F3'}, {Pr, F3'} and {CM, Cl, F3'}. -/
+theorem minimal_sets2 :
+    (minimalSets2 == [[S2.F3p, S2.Pr], [S2.F3p, S2.CM, S2.Cl], [S2.F3p, S2.AB]]) = true := by rfl
+
+/-! Fermat curves.  For the Fermat curve of degree n the characters of
+mu_n^3 / mu_n occurring in H^1 are the triples (a0, a1, a2), 1 <= ai <= n-1,
+with a0 + a1 + a2 divisible by n; they are pairwise distinct, number
+(n-1)(n-2) = 2g, and exactly half of them, those with sum n, have Hodge
+type (1,0).  Checked for 3 <= n <= 24. -/
+
+def fermatChars (n : Nat) : List (Nat × Nat × Nat) :=
+  ((List.range (n - 1)).map (· + 1)).flatMap fun a =>
+    ((List.range (n - 1)).map (· + 1)).flatMap fun b =>
+      ((List.range (n - 1)).map (· + 1)).filterMap fun c =>
+        if (a + b + c) % n == 0 then some (a, b, c) else none
+
+def charCountOk (n : Nat) : Bool :=
+  (fermatChars n).length == (n - 1) * (n - 2)
+
+def halfOk (n : Nat) : Bool :=
+  2 * ((fermatChars n).filter (fun t => t.1 + t.2.1 + t.2.2 == n)).length
+    == (n - 1) * (n - 2)
+
+theorem fermat_char_counts :
+    ((List.range 22).map (· + 3)).all (fun n => charCountOk n && halfOk n) = true := by
+  decide +kernel
+
+/-- At a special point of the Shimura curve the torus acts on H^1 of the
+Mumford fourfold by the eight characters lambda^s, s in {+1,-1}^3; those of
+type (1,0) are the four with s_3 = eta, so h^{1,0} = 4 for either sign. -/
+def signs : List (Int × Int × Int) :=
+  [1, -1].flatMap fun a => [1, -1].flatMap fun b => [1, -1].map fun c => (a, b, c)
+
+theorem special_point_types :
+    signs.length = 8 ∧ (signs.filter (fun s => s.2.2 == 1)).length = 4 ∧
+    (signs.filter (fun s => s.2.2 == -1)).length = 4 := by decide
+
+end CMGraph
+
 end HodgeClosure
 
 #print axioms HodgeClosure.hc_from_f2_f3p
@@ -1374,3 +1481,12 @@ end HodgeClosure
 #print axioms HodgeClosure.cube_windows
 #print axioms HodgeClosure.cube_parities
 #print axioms HodgeClosure.collapsed_acyclic
+#print axioms HodgeClosure.CMGraph.ab_from_cm_cl
+#print axioms HodgeClosure.CMGraph.not_ab_from_cm
+#print axioms HodgeClosure.CMGraph.not_ab_from_cl
+#print axioms HodgeClosure.CMGraph.hc_from_cm_cl_f3p
+#print axioms HodgeClosure.CMGraph.not_hc_from_cm_f3p
+#print axioms HodgeClosure.CMGraph.not_hc_from_cm_cl
+#print axioms HodgeClosure.CMGraph.minimal_sets2
+#print axioms HodgeClosure.CMGraph.fermat_char_counts
+#print axioms HodgeClosure.CMGraph.special_point_types
